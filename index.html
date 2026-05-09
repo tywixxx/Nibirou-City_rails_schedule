@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Нибиру-Сити - Главный • LED TABLO</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+<style>
+
+body{
+background:#050200;
+color:#ff7a00;
+font-family:'Press Start 2P', monospace;
+font-size:10px;
+}
+
+header{
+padding:15px;
+border-bottom:3px solid #ff7a00;
+text-shadow:0 0 10px #ff7a00;
+}
+
+th{
+background:#0a0500;
+color:#ff7a00;
+padding:10px;
+border-bottom:2px solid #ff7a00;
+}
+
+td{
+padding:10px;
+border-bottom:1px solid #2a1400;
+}
+
+.glow{
+text-shadow:0 0 6px #ff7a00,0 0 12px #ff7a00;
+}
+
+.row{
+opacity:0;
+transform:translateY(6px);
+transition:.3s;
+}
+
+.row.show{
+opacity:1;
+transform:translateY(0);
+}
+
+button{
+margin:5px;
+padding:8px 12px;
+background:#120700;
+border:2px solid #ff7a00;
+color:#ff7a00;
+font-family:'Press Start 2P';
+font-size:9px;
+}
+
+button.active{
+background:#ff7a00;
+color:#000;
+}
+
+/* 🔥 ПЕРЕНЕСЁН */
+.res{
+color:#ff3c00;
+font-weight:bold;
+animation:blink 0.8s infinite;
+}
+
+@keyframes blink{
+0%{opacity:1}
+50%{opacity:0.2}
+100%{opacity:1}
+}
+
+/* 🌑 TODAY ONLY */
+.past{
+opacity:0.25;
+filter:grayscale(1);
+}
+
+.past .res{
+animation:blink 0.8s infinite !important;
+opacity:1 !important;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+<div style="display:flex;justify-content:space-between">
+<div>
+<div class="glow" style="font-size:14px">НИБИРУ-СИТИ - ГЛАВНЫЙ</div>
+<div>ORANGE PIXEL LED</div>
+</div>
+
+<div style="text-align:right">
+<div id="time" class="glow"></div>
+<div id="date"></div>
+</div>
+</div>
+</header>
+
+<div style="padding:10px">
+<button onclick="setDay(0)" id="b0">TODAY</button>
+<button onclick="setDay(1)" id="b1">TOMORROW</button>
+<button onclick="setDay(2)" id="b2">+2 DAYS</button>
+</div>
+
+<table width="100%">
+<thead>
+<tr>
+<th>№</th>
+<th>Маршрут</th>
+<th>Время</th>
+<th>Тип</th>
+<th>Путь</th>
+<th>Статус</th>
+</tr>
+</thead>
+
+<tbody id="tb"></tbody>
+</table>
+
+<script>
+
+let day=0;
+let statuses={};
+
+/* ===== ВСЕ МАРШРУТЫ ВОЗВРАЩЕНЫ ===== */
+
+function trains(d){
+
+let t=[
+
+{ id:1, number:"001П", route:"Нибиру-Сити - Главный → Перниград Центральный", time:"09:37", type:"Отпр", platform:"1" },
+{ id:2, number:"002П", route:"Нибиру-Сити - Главный → Перниград Центральный", time:"15:42", type:"Отпр", platform:"1" },
+{ id:3, number:"015И", route:"Нибиру-Сити - Главный → Бордерсити Восточный", time:"08:12", type:"Отпр", platform:"3" },
+{ id:4, number:"016И", route:"Нибиру-Сити - Главный → Бордерсити Восточный", time:"14:27", type:"Отпр", platform:"3" },
+{ id:5, number:"105М", route:"Нибиру-Сити - Главный → Максимлин Центральный", time:"13:55", type:"Отпр", platform:"4" },
+{ id:6, number:"109И", route:"Нибиру-Сити - Главный → Дыркаленд Южный", time:"14:19", type:"Отпр", platform:"9" },
+{ id:7, number:"071В", route:"Нибиру-Сити - Главный → Бьоркпилс Северный", time:"07:58", type:"Отпр", platform:"6" },
+{ id:8, number:"073В", route:"Нибиру-Сити - Главный → Бьоркпилс Северный", time:"20:12", type:"Отпр", platform:"6" },
+{ id:9, number:"202Ж", route:"Нибиру-Сити - Главный → Жудас Центральный", time:"09:22", type:"Отпр", platform:"5" },
+{ id:10, number:"204Ж", route:"Нибиру-Сити - Главный → Жудас Центральный", time:"16:05", type:"Отпр", platform:"5" },
+{ id:11, number:"099И", route:"Нибиру-Сити - Главный → Крайден Восточный", time:"18:26", type:"Отпр", platform:"11" },
+
+{ id:12, number:"101П", route:"Перниград Центральный → Нибиру-Сити - Главный", time:"11:20", type:"Приб", platform:"1" },
+{ id:13, number:"102П", route:"Перниград Центральный → Нибиру-Сити - Главный", time:"17:55", type:"Приб", platform:"1" },
+{ id:14, number:"017И", route:"Бордерсити Восточный → Нибиру-Сити - Главный", time:"12:40", type:"Приб", platform:"3" },
+{ id:15, number:"018И", route:"Бордерсити Восточный → Нибиру-Сити - Главный", time:"19:15", type:"Приб", platform:"3" },
+{ id:16, number:"104М", route:"Максимлин Центральный → Нибиру-Сити - Главный", time:"11:33", type:"Приб", platform:"4" },
+{ id:17, number:"125М", route:"Максимлин Центральный → Нибиру-Сити - Главный", time:"16:08", type:"Приб", platform:"2" },
+{ id:18, number:"023Д", route:"Дыркаленд Южный → Нибиру-Сити - Главный", time:"10:45", type:"Приб", platform:"2" },
+{ id:19, number:"024Д", route:"Дыркаленд Южный → Нибиру-Сити - Главный", time:"18:30", type:"Приб", platform:"2" },
+{ id:20, number:"072В", route:"Бьоркпилс Северный → Нибиру-Сити - Главный", time:"15:47", type:"Приб", platform:"7" },
+{ id:21, number:"203Ж", route:"Жудас Центральный → Нибиру-Сити - Главный", time:"12:40", type:"Приб", platform:"5" },
+{ id:22, number:"205Ж", route:"Жудас Центральный → Нибиру-Сити - Главный", time:"19:28", type:"Приб", platform:"5" }
+
+];
+
+if(d===1){
+t.push({id:23,number:"110И",route:"Нибиру-Сити - Главный → Дыркаленд Южный",time:"20:40",type:"Отпр",platform:"9"});
+}
+
+if(d===2){
+t.push({id:24,number:"006П",route:"Нибиру-Сити - Главный → Перниград Центральный",time:"22:05",type:"Отпр",platform:"1"});
+}
+
+return t;
+}
+
+/* ===== STATUS ===== */
+
+function st(t){
+let k=t.id+"-"+day;
+return statuses[k]==="res"
+? "<span class='res'>ПЕРЕНЕСЁН</span>"
+: "<span>ПО РАСПИСАНИЮ</span>";
+}
+
+/* ===== PAST (ONLY TODAY) ===== */
+
+function isPast(time){
+if(day!==0) return false;
+
+let now=new Date();
+let [h,m]=time.split(":").map(Number);
+
+let t=new Date();
+t.setHours(h,m,0,0);
+
+return now>t;
+}
+
+/* ===== GEN ===== */
+
+function gen(list){
+list.forEach(t=>{
+let k=t.id+"-"+day;
+if(statuses[k]===undefined){
+statuses[k]=Math.random()<0.16?"res":"ok";
+}
+});
+}
+
+/* ===== RENDER ===== */
+
+function render(){
+
+let list=trains(day);
+gen(list);
+
+let tb=document.getElementById("tb");
+tb.innerHTML="";
+
+list.sort((a,b)=>a.time.localeCompare(b.time))
+.forEach((t,i)=>{
+
+let past=isPast(t.time);
+
+let tr=document.createElement("tr");
+tr.className="row "+(past?"past":"");
+
+tr.innerHTML=`
+<td class="glow">${t.number}</td>
+<td>${t.route}</td>
+<td class="glow">${t.time}</td>
+<td>${t.type}</td>
+<td>${t.platform}</td>
+<td>${st(t)}</td>
+`;
+
+tb.appendChild(tr);
+setTimeout(()=>tr.classList.add("show"),i*40);
+
+});
+}
+
+/* ===== DAY ===== */
+
+function setDay(d){
+day=d;
+for(let i=0;i<3;i++)
+document.getElementById("b"+i).classList.remove("active");
+document.getElementById("b"+d).classList.add("active");
+render();
+}
+
+/* ===== CLOCK ===== */
+
+setInterval(()=>{
+let n=new Date();
+document.getElementById("time").innerText=n.toTimeString().slice(0,5);
+document.getElementById("date").innerText=n.toLocaleDateString("ru-RU");
+},1000);
+
+/* ===== AUTO START ===== */
+
+window.onload=()=>{
+setDay(0);
+render();
+setInterval(render,8000);
+};
+
+</script>
+
+</body>
+</html>
